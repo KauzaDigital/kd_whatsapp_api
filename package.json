@@ -1,0 +1,21 @@
+{
+  "name": "kd_whatsapp_api",
+  "version": "1.0.0",
+  "description": "API REST de WhatsApp - Kauza Digital",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "test": "node --test test/*.test.js"
+  },
+  "author": "Kauza Digital",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "axios": "^1.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
