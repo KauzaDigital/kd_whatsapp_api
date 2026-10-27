@@ -41,3 +41,63 @@ npm test
 ```
 
 Las pruebas usan un proveedor simulado y no envían mensajes reales.
+
+
+## Enviar documentos PDF
+
+`POST /api/v1/messages/document` requiere `x-api-key: KD_API_KEY` y JSON:
+
+```json
+{
+  "number": "51999999999",
+  "fileName": "acta.pdf",
+  "caption": "Adjuntamos su acta de conformidad.",
+  "base64": "CONTENIDO_DEL_PDF_EN_BASE64"
+}
+```
+
+`number`, `fileName` y `base64` son obligatorios. `caption` es opcional, de hasta
+1024 caracteres. Solo se aceptan PDF de hasta 10 MiB (10 485 760 bytes), con nombre
+terminado en `.pdf`, de hasta 200 caracteres, sin rutas ni caracteres de control.
+Base64 debe usar el formato estándar con padding; también se admite el prefijo
+`data:application/pdf;base64,`. Se comprueban codificación, tamaño y cabecera
+`%PDF-`; esta comprobación no sustituye un análisis completo del documento.
+No se reciben rutas locales, URLs ni multipart. Envíe los bytes del archivo.
+
+La ruta admite JSON de hasta 14 MiB para el incremento de tamaño de base64,
+autenticando antes de procesarlo. El resto de las rutas mantiene el límite de
+100 KiB. Si usa un proxy, ajuste su límite de cuerpo para permitir esta ruta.
+
+Ejemplo en PowerShell (reemplace número y ruta; use un destinatario autorizado):
+
+```powershell
+$headers = @{ 'x-api-key' = Read-Host 'Ingresa tu KD_API_KEY' }
+$archivo = 'C:\Documentos\acta.pdf'
+$body = @{
+    number = '51999999999'
+    fileName = [IO.Path]::GetFileName($archivo)
+    caption = 'Adjuntamos su acta de conformidad.'
+    base64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($archivo))
+} | ConvertTo-Json -Compress
+
+$resultado = Invoke-RestMethod -Method Post `
+    -Uri 'http://localhost:3000/api/v1/messages/document' `
+    -Headers $headers -ContentType 'application/json; charset=utf-8' `
+    -Body ([Text.Encoding]::UTF8.GetBytes($body))
+$resultado
+```
+
+Un HTTP 202 incluye `provider_message_id`, `status`, `delivered` y `read`, igual
+que el envío de texto. Consulte `GET /api/v1/messages/IDENTIFICADOR` con la misma
+clave para seguir las confirmaciones. Un 202 no demuestra entrega.
+400 indica campos o contenido inválidos; 413 indica exceso de tamaño; 401 indica
+fallo de autenticación. Un 502 indica un resultado sin confirmar o sin ID:
+no reintente automáticamente, porque Evolution podría haber aceptado el PDF.
+El envío a Evolution usa `/message/sendMedia/{instance}`, `mediatype=document`,
+`mimetype=application/pdf`, `media`, `fileName` y `caption`, con timeout de 60 s.
+La API no guarda el PDF en disco ni en SQLite; el proveedor procesa el documento.
+Esta ruta no agrega automáticamente adjuntos a las notificaciones de Odoo.
+
+Reinicie Node después de actualizar. Si utiliza el servicio API de Compose,
+reconstrúyalo con `docker compose up -d --build api`. No inicie a la vez Node en
+Windows y el contenedor API sobre el mismo puerto 3000.

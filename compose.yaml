@@ -4,6 +4,7 @@ services:
     build: .
     restart: unless-stopped
     ports: ["127.0.0.1:3000:3000"]
+
     environment:
       PORT: 3000
       KD_API_KEY: ${KD_API_KEY:?Configure KD_API_KEY}
@@ -23,6 +24,7 @@ services:
   evolution:
     image: ${EVOLUTION_IMAGE:-evoapicloud/evolution-api:v2.3.7}
     restart: unless-stopped
+    ports: ["127.0.0.1:8080:8080"]
     environment:
       SERVER_URL: http://evolution:8080
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}

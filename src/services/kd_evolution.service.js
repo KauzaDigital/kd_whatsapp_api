@@ -7,7 +7,7 @@ async function sendText(number, message) {
 
     if (!baseUrl || !instance || !apiKey) {
         throw new Error(
-            "Configuración de Evolution API incompleta"
+            "ConfiguraciÃ³n de Evolution API incompleta"
         );
     }
 
@@ -35,7 +35,7 @@ async function sendText(number, message) {
 
 function client() {
     if (!process.env.EVOLUTION_URL || !process.env.EVOLUTION_API_KEY || !process.env.EVOLUTION_INSTANCE) {
-        throw new Error('Configuración de Evolution API incompleta');
+        throw new Error('ConfiguraciÃ³n de Evolution API incompleta');
     }
     return axios.create({ baseURL: process.env.EVOLUTION_URL.replace(/\/$/, ''),
         headers: { apikey: process.env.EVOLUTION_API_KEY }, timeout: 15000 });
@@ -44,7 +44,7 @@ const instancePath = () => encodeURIComponent(process.env.EVOLUTION_INSTANCE);
 async function connectionState() {
     const { data } = await client().get('/instance/connectionState/' + instancePath());
     const state = data?.instance?.state;
-    if (!['open', 'close', 'connecting', 'refused'].includes(state)) throw new Error('Estado de conexión desconocido');
+    if (!['open', 'close', 'connecting', 'refused'].includes(state)) throw new Error('Estado de conexiÃ³n desconocido');
     return { instance: process.env.EVOLUTION_INSTANCE, state, connected: state === 'open' };
 }
 async function getQr() {
@@ -71,4 +71,11 @@ async function setupInstance() {
         events: ['MESSAGES_UPDATE'] } });
     return connectionState();
 }
-module.exports = { sendText, connectionState, getQr, setupInstance };
+async function sendDocument({ number, base64, fileName, caption = '' }) {
+    const { data } = await client().post('/message/sendMedia/' + instancePath(), {
+        number, mediatype: 'document', mimetype: 'application/pdf',
+        media: base64, fileName, caption
+    }, { timeout: 60000 });
+    return data;
+}
+module.exports = { sendDocument, sendText, connectionState, getQr, setupInstance };

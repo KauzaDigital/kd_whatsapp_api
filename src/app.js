@@ -12,7 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "100kb" }));
+
 
 app.get("/health", (req, res) => {
     res.json({
@@ -28,10 +28,13 @@ app.use("/api/v1", createRouter({ store, evolution,
     webhookSecret: process.env.KD_WEBHOOK_SECRET }));
 
 app.use((err, req, res, next) => {
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({ success: false, error: 'Solicitud demasiado grande; PDF máximo de 10 MiB' });
+    }
     if (err instanceof SyntaxError && err.status === 400) {
         return res.status(400).json({
             success: false,
-            error: "JSON inválido"
+            error: "JSON invÃ¡lido"
         });
     }
     console.error(err);
