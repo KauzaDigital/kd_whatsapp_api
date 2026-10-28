@@ -19,7 +19,8 @@ app.get("/health", (req, res) => {
         success: true,
         service: "KD WhatsApp API",
         author: "Kauza Digital",
-        version: "1.0.0"
+        version: "1.0.0",
+        capabilities: ['delivery-receipts', 'branch-inbox', 'chat-media']
     });
 });
 

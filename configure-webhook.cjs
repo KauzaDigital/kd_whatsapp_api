@@ -17,8 +17,9 @@ async function main() {
     if (!env.KD_WEBHOOK_SECRET) fs.appendFileSync(envPath, '\nKD_WEBHOOK_SECRET=' + secret + '\n');
     await api.post('/webhook/set/' + instance, { webhook: {
         enabled: true, url, byEvents: false, base64: false,
-        headers: { 'x-webhook-secret': secret }, events: ['MESSAGES_UPDATE']
+        headers: { 'x-webhook-secret': secret },
+        events: [...new Set([...(Array.isArray(existing?.events) ? existing.events : []), 'MESSAGES_UPDATE', 'MESSAGES_UPSERT'])]
     }});
-    console.log('Webhook de confirmaciones configurado. Reinicie la API para cargar los cambios.');
+    console.log('Webhook de recepción y confirmaciones configurado. Reinicie la API para cargar los cambios.');
 }
 main().catch(error => { console.error('No se pudo configurar el webhook:', error.message); process.exitCode = 1; });

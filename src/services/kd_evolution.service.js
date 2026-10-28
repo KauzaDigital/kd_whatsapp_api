@@ -68,7 +68,7 @@ async function setupInstance() {
     if (existing?.enabled && existing.url !== url) throw new Error('Existe otro webhook activo; revise su URL antes de continuar');
     await api.post('/webhook/set/' + instancePath(), { webhook: { enabled: true, url,
         byEvents: false, base64: false, headers: { 'x-webhook-secret': process.env.KD_WEBHOOK_SECRET },
-        events: ['MESSAGES_UPDATE'] } });
+        events: [...new Set([...(Array.isArray(existing?.events) ? existing.events : []), 'MESSAGES_UPDATE', 'MESSAGES_UPSERT'])] } });
     return connectionState();
 }
 async function sendDocument({ number, base64, fileName, caption = '' }) {
@@ -78,4 +78,17 @@ async function sendDocument({ number, base64, fileName, caption = '' }) {
     }, { timeout: 60000 });
     return data;
 }
-module.exports = { sendDocument, sendText, connectionState, getQr, setupInstance };
+async function sendMedia({number, base64, mimetype, fileName, caption = ''}) {
+    const {data} = await client().post('/message/sendMedia/' + instancePath(), {
+        number, mediatype: mimetype.startsWith('image/') ? 'image' : 'document',
+        mimetype, media: base64, fileName, caption,
+    }, {timeout:60000});
+    return data;
+}
+async function downloadMedia(raw) {
+    const {data} = await client().post('/chat/getBase64FromMediaMessage/' + instancePath(), {
+        message: JSON.parse(raw), convertToMp4: false,
+    }, {timeout:30000, maxContentLength: 14 * 1024 * 1024, maxBodyLength: 100 * 1024});
+    return data;
+}
+module.exports = { sendDocument, sendText, sendMedia, downloadMedia, connectionState, getQr, setupInstance };

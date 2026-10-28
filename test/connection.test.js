@@ -29,7 +29,7 @@ test('Evolution adapter creates missing instance, configures callback, filters Q
     try {
         await service.setupInstance();
         assert.equal(callback.headers['x-webhook-secret'], 'hook-secret');
-        assert.deepEqual(callback.events, ['MESSAGES_UPDATE']);
+        assert.deepEqual(callback.events, ['MESSAGES_UPDATE', 'MESSAGES_UPSERT']);
         const qr = await service.getQr();
         assert.equal(qr.qr, 'data:image/png;base64,dGVzdA==');
         assert.equal(qr.apikey, undefined);

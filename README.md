@@ -101,3 +101,13 @@ Esta ruta no agrega automáticamente adjuntos a las notificaciones de Odoo.
 Reinicie Node después de actualizar. Si utiliza el servicio API de Compose,
 reconstrúyalo con `docker compose up -d --build api`. No inicie a la vez Node en
 Windows y el contenedor API sobre el mismo puerto 3000.
+
+## Bandeja de recepción para Odoo
+
+El webhook autenticado admite `MESSAGES_UPSERT` de mensajes entrantes personales y mantiene los eventos `MESSAGES_UPDATE` de confirmaciones. Se excluyen mensajes propios, grupos e históricos de tipo `append`. La bandeja SQLite deduplica por instancia e ID del proveedor y conserva los mensajes para lectura paginada. Proteja y respalde el archivo SQLite: contiene conversaciones y metadatos del proveedor.
+
+- `GET /api/v1/incoming?after=0&limit=30`: requiere `x-api-key`; devuelve `feed_id`, `instance`, `messages`, `cursor`. Cada mensaje incluye `seq`, `provider_message_id`, `number`, `text`, `quoted_id`, `media_type`, `sent_at`. El consumidor guarda el cursor únicamente después de persistir los mensajes; al cambiar `feed_id`, reinicia la lectura. No expone el mensaje crudo del proveedor.
+- `GET /api/v1/incoming/:id/media`: requiere `x-api-key`; recupera por el ID guardado y descarga a través del Evolution configurado. Devuelve `base64`, `mimetype`, `fileName` para PDF/JPG/PNG/WEBP de hasta 10 MiB. No admite descargas arbitrarias por URL ni formatos de visualización única.
+- `POST /api/v1/messages/media`: requiere `x-api-key`; recibe `number`, `base64`, `mimetype`, `fileName`, `caption`. Usa el seguimiento habitual de confirmaciones. Un envío aceptado no implica entrega o lectura.
+
+Después de actualizar Node, ejecute `node configure-webhook.cjs .` o **Crear/configurar instancia** desde Odoo para añadir ambos eventos. Conserva los demás eventos existentes y rechaza reemplazar otro webhook activo con URL diferente. `/health` anuncia las capacidades `branch-inbox` y `chat-media` para comprobar el código en ejecución.
